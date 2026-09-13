@@ -1,0 +1,2 @@
+[console_scripts]
+smart-home = smart_home_patterns.cli:main

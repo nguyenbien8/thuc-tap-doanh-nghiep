@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: smart-home-patterns
+Version: 0.1.0
+Summary: Unsupervised discovery of recurring human activities from smart-home sensor events
+Requires-Python: >=3.10
+Requires-Dist: numpy>=1.24
+Requires-Dist: pandas>=2.0
+Requires-Dist: scikit-learn>=1.3
+Requires-Dist: matplotlib>=3.7
+Requires-Dist: seaborn>=0.12
+Requires-Dist: PyYAML>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"

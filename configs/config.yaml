@@ -1,0 +1,21 @@
+data:
+  raw_path: data/raw/smart_home_events.csv
+  processed_path: data/processed/session_features.csv
+  events_path: data/processed/clean_events.csv
+  random_seed: 42
+  inactivity_gap_minutes: 30
+
+preprocessing:
+  required_columns: [timestamp, resident_id, room, sensor_type, sensor_id, value, event_type]
+  max_missing_fraction: 0.40
+
+clustering:
+  min_samples: 5
+  eps_quantile: 0.90
+  pca_components: 2
+  min_cluster_size_for_report: 3
+
+report:
+  output_dir: reports/figures
+  metrics_path: reports/metrics.json
+  profiles_path: reports/activity_profiles.csv

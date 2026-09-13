@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run smart-home pipeline",
+      "type": "shell",
+      "command": "python -m smart_home_patterns.cli generate-demo; python -m smart_home_patterns.cli run",
+      "options": {"env": {"PYTHONPATH": "${workspaceFolder}/src"}},
+      "problemMatcher": []
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": "python -m pytest",
+      "options": {"env": {"PYTHONPATH": "${workspaceFolder}/src"}},
+      "problemMatcher": []
+    }
+  ]
+}

@@ -11,7 +11,6 @@
 | **Giảng viên hướng dẫn** | Vũ Thị Hồng Nhạn |
 | **Đơn vị** | UET-VNU |
 | **Slide** | [reports/slide_thuyet_trinh.html](reports/slide_thuyet_trinh.html) (tải repo về rồi mở bằng trình duyệt) |
-| **Mới đọc repo?** | Bắt đầu từ [docs/README.md](docs/README.md) |
 
 Đề tài **tự động tìm các hành động thường xuyên, tuần hoàn của con người từ dữ liệu cảm biến trong nhà thông minh**, không dùng nhãn. Kết quả là các thói quen có thể đọc được, ví dụ:
 
@@ -95,18 +94,13 @@ Tham số nằm trong [configs/config.yaml](configs/config.yaml), mỗi dòng c�
 
 ## Tài liệu
 
-> **Mới tiếp cận repo?** Bắt đầu từ [docs/README.md](docs/README.md): lộ trình đọc, giải thích chi tiết dữ liệu, từng quyết định thiết kế và cách đọc code.
-
-Báo cáo nộp:
-
 | File | Nội dung |
 |---|---|
 | [reports/01_tong_quan_de_tai.md](reports/01_tong_quan_de_tai.md) | Bối cảnh, câu hỏi nghiên cứu, phạm vi, định nghĩa thói quen, liên hệ tài liệu tham khảo |
 | [reports/02_du_lieu.md](reports/02_du_lieu.md) | Schema, bộ dữ liệu mô phỏng, dữ liệu STRANDS Aruba và kiểm định mã vị trí |
 | [reports/03_phuong_phap.md](reports/03_phuong_phap.md) | Chi tiết B1 và B2: công thức, tham số, lý do thiết kế, cách đánh giá |
 | [reports/04_ket_qua_thuc_nghiem.md](reports/04_ket_qua_thuc_nghiem.md) | Kết quả, so sánh baseline, ablation, độ nhạy, hạn chế |
-| [reports/05_kich_ban_thuyet_trinh.md](reports/05_kich_ban_thuyet_trinh.md) | Kịch bản thuyết trình và câu hỏi phản biện |
-| [reports/slide_thuyet_trinh.html](reports/slide_thuyet_trinh.html) | Slide thuyết trình (mở bằng trình duyệt; `N` = ghi chú, `F` = toàn màn hình) |
+| [reports/slide_thuyet_trinh.html](reports/slide_thuyet_trinh.html) | Slide thuyết trình (mở bằng trình duyệt; `N` = ghi chú, `F` = toàn màn hình, `Ctrl+P` = xuất PDF) |
 
 ## Cấu trúc mã nguồn
 
@@ -123,7 +117,6 @@ src/smart_home_patterns/
   cli.py                 lệnh smart-home
 tests/                   21 kiểm thử (pytest)
 reports/                 báo cáo nộp, slide, kết quả
-docs/                    tài liệu hướng dẫn hiểu repo (bắt đầu từ docs/README.md)
 ```
 
 ## Tài liệu tham khảo

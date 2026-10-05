@@ -16,3 +16,7 @@ data/processed/*
 !data/processed/.gitkeep
 
 # Results under reports/results/ ARE committed: the report and slides cite them.
+
+# Personal study / presentation-prep notes: kept on this machine only
+docs/
+reports/05_kich_ban_thuyet_trinh.md

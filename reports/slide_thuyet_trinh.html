@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Học thói quen trong nhà thông minh</title>
+<style>
+  :root {
+    --navy: #1e2761;
+    --navy-soft: #2d3875;
+    --ice: #cadcfc;
+    --habit: #2a78d6;
+    --habit-tint: #e8f0fb;
+    --occasional: #eb6834;
+    --occasional-tint: #fdeee7;
+    --noise: #9a9a96;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --line: #e4e3df;
+    --panel: #f6f7f9;
+    --bg: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #111522; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  /* ---------- stage: 1280×720 canvas scaled to the window ---------- */
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #deck { width: 1280px; height: 720px; position: relative; transform-origin: center center; }
+  .slide {
+    position: absolute; inset: 0; width: 1280px; height: 720px;
+    background: var(--bg); padding: 56px 72px 48px;
+    display: none; flex-direction: column;
+  }
+  .slide.active { display: flex; }
+  .slide.dark { background: var(--navy); color: #fff; }
+  aside.notes { display: none; }
+
+  /* ---------- typography ---------- */
+  .kicker { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--habit); margin-bottom: 8px; }
+  .dark .kicker { color: var(--ice); }
+  h1 { font-size: 46px; line-height: 1.15; font-weight: 700; }
+  h2 { font-size: 36px; line-height: 1.2; font-weight: 700; margin-bottom: 28px; }
+  h3 { font-size: 21px; font-weight: 700; margin-bottom: 8px; }
+  p, li { font-size: 19px; line-height: 1.5; color: var(--ink-2); }
+  .dark p, .dark li { color: #dfe6fb; }
+  strong { color: var(--ink); }
+  .dark strong { color: #fff; }
+  ul { padding-left: 22px; }
+  li + li { margin-top: 6px; }
+  .small { font-size: 17px; }
+  .muted { color: var(--ink-2); }
+  code, .mono { font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }
+
+  /* ---------- layout helpers ---------- */
+  .row { display: flex; gap: 32px; }
+  .col { flex: 1; min-width: 0; }
+  .grow { flex: 1; }
+  .center { align-items: center; }
+  .card { background: var(--panel); border-radius: 14px; padding: 22px 24px; }
+  .card.habit { background: var(--habit-tint); }
+  .card.occ { background: var(--occasional-tint); }
+  .dark .card { background: var(--navy-soft); }
+  .badge {
+    display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--habit); color: #fff; font-weight: 700; font-size: 18px; flex: none;
+  }
+  .badge.occ { background: var(--occasional); }
+  .badge.grey { background: var(--noise); }
+  .chip {
+    display: inline-block; padding: 3px 12px; border-radius: 999px; font-weight: 700;
+    background: var(--habit); color: #fff; font-size: 17px; font-variant-numeric: tabular-nums;
+  }
+  .chip.occ { background: var(--occasional); }
+  .chip.outline { background: transparent; color: var(--habit); box-shadow: inset 0 0 0 2px var(--habit); }
+  .stat { font-size: 58px; font-weight: 800; line-height: 1; color: var(--habit); font-variant-numeric: tabular-nums; }
+  .stat.occ { color: var(--occasional); }
+  .dark .stat { color: #fff; }
+  .stat-label { font-size: 16px; color: var(--ink-2); margin-top: 8px; }
+  .dark .stat-label { color: var(--ice); }
+  figure { display: flex; flex-direction: column; align-items: center; }
+  figure img { display: block; max-width: 100%; border-radius: 8px; }
+  figcaption { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 17px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); font-weight: 700; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { background: var(--habit-tint); font-weight: 600; color: var(--ink); }
+
+  .log {
+    background: #0f1426; color: #d7def5; border-radius: 12px; padding: 18px 20px;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15px; line-height: 1.65; white-space: pre;
+  }
+  .log .t { color: #8ea6e8; }
+  .log .dim { color: #6b7597; }
+
+  .flow { display: flex; align-items: stretch; gap: 0; }
+  .flow .step { flex: 1; background: var(--panel); border-radius: 14px; padding: 22px 20px; }
+  .flow .arrow { width: 34px; display: grid; place-items: center; color: var(--noise); font-size: 26px; flex: none; }
+  .flow .n { font-size: 34px; font-weight: 800; color: var(--habit); font-variant-numeric: tabular-nums; }
+  .flow .step p { font-size: 17px; }
+
+  .formula {
+    background: var(--panel); border-radius: 14px; padding: 18px 22px; font-size: 22px;
+    font-family: "Cambria Math", Cambria, "Times New Roman", serif; text-align: center;
+  }
+
+  /* bar comparison */
+  .bars { display: flex; flex-direction: column; gap: 14px; }
+  .bar-row { display: grid; grid-template-columns: 170px 1fr 70px; align-items: center; gap: 12px; }
+  .bar-row .lab { font-size: 15px; color: var(--ink-2); text-align: right; }
+  .bar-track { height: 26px; }
+  .bar { height: 100%; border-radius: 0 6px 6px 0; }
+  .bar.base { background: var(--noise); }
+  .bar.prop { background: var(--habit); }
+  .bar-row .val { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* footer */
+  .foot {
+    position: absolute; left: 72px; right: 72px; bottom: 18px; display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--noise);
+  }
+  .dark .foot { color: #8c95c4; }
+
+  /* notes panel & help */
+  #notes {
+    position: fixed; left: 0; right: 0; bottom: 0; max-height: 32vh; overflow: auto; display: none;
+    background: #fffdf5; color: #222; font-size: 16px; line-height: 1.5; padding: 14px 24px;
+    border-top: 3px solid var(--occasional); z-index: 5;
+  }
+  #notes.show { display: block; }
+  #notes b { color: var(--occasional); }
+  #hint {
+    position: fixed; right: 14px; bottom: 10px; color: #7f88ab; font-size: 12px; z-index: 4;
+    font-family: "Segoe UI", system-ui, sans-serif;
+  }
+  #hint button { background: none; border: 1px solid #4a5380; color: #c6cdea; border-radius: 6px; padding: 3px 9px; margin-left: 6px; cursor: pointer; font: inherit; }
+
+  /* print: one slide per page (Ctrl+P → Save as PDF, landscape, no margins) */
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    html, body { background: #fff; overflow: visible; height: auto; }
+    #stage { position: static; display: block; }
+    #deck { transform: none !important; width: auto; height: auto; }
+    .slide { display: flex !important; position: relative; page-break-after: always; break-after: page; }
+    #notes, #hint { display: none !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+
+<!-- 1 ─────────────────────────────── TITLE -->
+<section class="slide dark" style="justify-content:center">
+  <div class="kicker">Báo cáo thực tập</div>
+  <h1 style="font-size:54px;max-width:1000px">Học thói quen của con người<br>trong ngôi nhà thông minh</h1>
+  <p style="font-size:24px;margin-top:18px;max-width:900px">Tìm các hành động thường xuyên, tuần hoàn từ dữ liệu cảm biến bằng học không giám sát (DBSCAN)</p>
+  <div class="row" style="margin-top:56px;gap:48px">
+    <div><div class="stat-label">Sinh viên thực hiện</div><p style="font-size:21px"><strong>Nguyễn Văn Biển</strong></p></div>
+    <div><div class="stat-label">Giảng viên / người hướng dẫn</div><p style="font-size:21px"><strong>Vũ Thị Hồng Nhạn</strong></p></div>
+    <div><div class="stat-label">Đơn vị thực tập</div><p style="font-size:21px"><strong>UET-VNU</strong></p></div>
+  </div>
+  <aside class="notes">Kính chào thầy cô. Em xin trình bày đề tài "Học thói quen của con người trong ngôi nhà thông minh". Mục tiêu là từ dữ liệu cảm biến không có nhãn, tự động tìm ra những việc một người thường làm, ở đâu và vào khoảng giờ nào.</aside>
+</section>
+
+<!-- 2 ─────────────────────────────── PROBLEM -->
+<section class="slide">
+  <div class="kicker">Bài toán</div>
+  <h2>Từ hàng nghìn dòng log đến một câu trả lời con người đọc được</h2>
+  <div class="row grow center">
+    <div class="col">
+      <div class="log"><span class="t">20:31:04</span>  kitchen  motion    1
+<span class="t">20:31:34</span>  kitchen  door      open
+<span class="t">20:32:04</span>  kitchen  temp      23.1
+<span class="t">20:32:34</span>  kitchen  light     318
+<span class="t">20:33:04</span>  kitchen  <strong style="color:#fff">pillbox   open</strong>
+<span class="t">20:35:12</span>  kitchen  motion    1
+<span class="dim">... × 28 ngày, 2 người, 3.397 sự kiện</span></div>
+    </div>
+    <div style="font-size:40px;color:var(--noise)">→</div>
+    <div class="col">
+      <div class="card habit">
+        <h3>Thói quen tìm được</h3>
+        <p>Cư dân 1 ở <strong>bếp</strong> lúc khoảng <span class="chip">20:32</span>, mỗi lần ~3 phút, lặp lại <strong>25/28 ngày</strong>, luôn mở hộp thuốc.</p>
+        <p style="margin-top:10px">→ <strong>thói quen uống thuốc buổi tối</strong></p>
+      </div>
+      <ul style="margin-top:22px" class="small">
+        <li><strong>Không có nhãn:</strong> không ai ghi lại "tôi đang uống thuốc".</li>
+        <li><strong>Rời rạc, nhiễu:</strong> một hoạt động sinh nhiều sự kiện, xen lẫn đi lại ngẫu nhiên.</li>
+        <li><strong>Mang tính cá nhân:</strong> mỗi người một lịch, không viết luật chung được.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Bên trái là dữ liệu thô: mỗi dòng chỉ nói lúc nào, phòng nào, cảm biến nào. Máy không thể hiểu thói quen nếu nhìn từng dòng. Bên phải là thứ chúng ta muốn: một câu mô tả kiểu "người này hay ở bếp lúc 20:32, 25 trên 28 ngày, có mở hộp thuốc". Khó khăn là dữ liệu không nhãn, nhiễu và mỗi người một kiểu, nên cần học không giám sát.</aside>
+</section>
+
+<!-- 3 ─────────────────────────────── SCOPE -->
+<section class="slide">
+  <div class="kicker">Mục tiêu và phạm vi</div>
+  <h2>Hai bước, một kỹ thuật</h2>
+  <div style="margin:auto 0">
+  <div class="row">
+    <div class="col card">
+      <div class="row center" style="gap:14px;margin-bottom:10px"><span class="badge">B1</span><h3 style="margin:0">Tiền xử lý dữ liệu</h3></div>
+      <ul class="small">
+        <li>Làm sạch: trùng lặp, timestamp hỏng, giá trị thiếu, tên phòng lộn xộn</li>
+        <li>Gom sự kiện thành <strong>phiên</strong> = một lần ở liên tục trong một phòng</li>
+        <li>Trích đặc trưng: giờ bắt đầu, thời lượng, phòng, cảm biến</li>
+      </ul>
+    </div>
+    <div class="col card">
+      <div class="row center" style="gap:14px;margin-bottom:10px"><span class="badge">B2</span><h3 style="margin:0">Định nghĩa mẫu → tìm mẫu</h3></div>
+      <ul class="small">
+        <li>Định nghĩa <strong>thói quen</strong> đo được: cùng người, cùng phòng, cùng khung giờ, lặp lại ≥ 50% số ngày</li>
+        <li>Kỹ thuật: <strong>DBSCAN</strong> — phân cụm theo mật độ</li>
+        <li>Mô tả: ai · ở đâu · mấy giờ · bao lâu · bao nhiêu ngày</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:24px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)">
+    <div class="row center" style="gap:14px"><span class="badge grey">✕</span>
+      <p><strong>Ngoài phạm vi:</strong> robot, hệ thống nhắc nhở khi quên uống thuốc, điều khiển thiết bị, dự đoán hành động tiếp theo. Đề tài dừng ở việc <strong>tìm ra</strong> thói quen — đó là nền tảng cho các ứng dụng đó.</p>
+    </div>
+  </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Đề tài gồm đúng hai bước. B1 tiền xử lý: làm sạch và gom sự kiện thành phiên. B2: định nghĩa thói quen một cách đo được, rồi dùng một kỹ thuật là DBSCAN để tìm. Em nói rõ phần ngoài phạm vi: không làm robot, không làm nhắc nhở; ví dụ em chỉ cần tìm ra người này hay uống thuốc lúc 20:30.</aside>
+</section>
+
+<!-- 4 ─────────────────────────────── REFERENCE -->
+<section class="slide">
+  <div class="kicker">Tài liệu tham khảo</div>
+  <h2>Kế thừa tư tưởng, không sao chép kỹ thuật</h2>
+  <p class="small" style="margin-top:-14px;margin-bottom:18px">Duckworth, Hogg &amp; Cohn (2019). <em>Unsupervised human activity analysis for intelligent mobile robots.</em> Artificial Intelligence 270:67–92 — dự án STRANDS</p>
+  <div style="margin:auto 0">
+  <table style="font-size:19px">
+    <tr><th style="width:20%"></th><th>Duckworth et al. (2019)</th><th>Đề tài này</th></tr>
+    <tr><td><strong>Quan sát</strong></td><td>Camera trên robot, khung xương người</td><td>Cảm biến môi trường / vị trí trong nhà</td></tr>
+    <tr><td><strong>Đơn vị</strong></td><td>Một đoạn quan sát người</td><td>Một <strong>phiên</strong>: một lần ở liên tục trong một phòng</td></tr>
+    <tr><td><strong>Biểu diễn</strong></td><td>Quan hệ không gian–thời gian <em>định tính</em></td><td>Giờ trên vòng tròn 24h + thời lượng, nhóm theo phòng</td></tr>
+    <tr><td><strong>Kỹ thuật</strong></td><td>LDA (mô hình chủ đề xác suất)</td><td>DBSCAN (phân cụm mật độ)</td></tr>
+    <tr class="hl"><td>Điểm chung</td><td colspan="2">Học không nhãn từ quan sát dài hạn; nhãn chỉ dùng để đánh giá; mẫu = cấu trúc lặp lại trong dữ liệu</td></tr>
+  </table>
+  <p class="small" style="margin-top:28px">Dữ liệu thật: STRANDS <em>Long-term person activity</em> (Coppola et al., ECAI 2016), tập Aruba trích từ CASAS (Cook, 2010).</p>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Tài liệu tham khảo chính là bài của Duckworth và cộng sự năm 2019 trong dự án STRANDS. Họ dùng robot quan sát người, biểu diễn bằng quan hệ định tính và dùng LDA để tự tìm các lớp hoạt động. Em giữ tư tưởng: học không nhãn, nhãn chỉ để đánh giá. Nhưng dữ liệu của em là cảm biến trong nhà, câu hỏi là "khi nào, ở đâu", nên em chọn DBSCAN trên không gian thời gian, dễ giải thích hơn LDA.</aside>
+</section>
+
+<!-- 5 ─────────────────────────────── DATA -->
+<section class="slide">
+  <div class="kicker">Dữ liệu</div>
+  <h2>Một đề thi có đáp án và một bộ dữ liệu thật</h2>
+  <div class="row" style="margin:auto 0">
+    <div class="col card">
+      <h3>Thí nghiệm 1 · Mô phỏng</h3>
+      <p class="small">Biết trước đáp án để đo độ chính xác</p>
+      <div class="row" style="margin:18px 0 14px;gap:28px">
+        <div><div class="stat">2</div><div class="stat-label">cư dân</div></div>
+        <div><div class="stat">28</div><div class="stat-label">ngày</div></div>
+        <div><div class="stat">3.397</div><div class="stat-label">sự kiện</div></div>
+      </div>
+      <ul class="small">
+        <li>12 thói quen cài sẵn, có <strong>uống thuốc 20:30</strong></li>
+        <li>3 mẫu thỉnh thoảng: thể dục 30%, dậy muộn cuối tuần</li>
+        <li>Nhiễu: 3 lần đi ngang ngẫu nhiên/người/ngày</li>
+        <li>Lỗi dữ liệu: 50 dòng trùng, 8 timestamp hỏng, 33 giá trị thiếu</li>
+      </ul>
+    </div>
+    <div class="col card">
+      <h3>Thí nghiệm 2 · STRANDS Aruba</h3>
+      <p class="small">Người cao tuổi sống một mình, căn hộ thông minh CASAS</p>
+      <div class="row" style="margin:18px 0 14px;gap:28px">
+        <div><div class="stat">112</div><div class="stat-label">ngày</div></div>
+        <div><div class="stat">161k</div><div class="stat-label">phút (vị trí/phút)</div></div>
+        <div><div class="stat">10</div><div class="stat-label">vị trí</div></div>
+      </div>
+      <ul class="small">
+        <li>Định dạng thật: <code>location.min</code>, <code>activity.min</code></li>
+        <li>Nhãn hoạt động của chuyên gia → <strong>chỉ để chấm điểm</strong></li>
+        <li>Kiểm định mã vị trí: đánh số từ 1; mã 9 = <strong>ra ngoài</strong> (nơi Leave/Enter_Home)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Em dùng hai bộ dữ liệu. Bộ mô phỏng giống một đề thi có đáp án: em cài sẵn 12 thói quen, trong đó có uống thuốc lúc 20:30, thêm các hoạt động thỉnh thoảng, nhiễu và lỗi dữ liệu. Bộ thứ hai là dữ liệu thật STRANDS Aruba, 112 ngày, vị trí của người theo từng phút. Khi đọc dữ liệu thật em phát hiện file không ghi rõ mã phòng bắt đầu từ 0 hay 1, nên em đối chiếu với nhãn hoạt động để xác định: ví dụ mã 1 đi kèm Sleeping nên là phòng ngủ.</aside>
+</section>
+
+<!-- 6 ─────────────────────────────── B1 -->
+<section class="slide">
+  <div class="kicker">Bước 1 · Tiền xử lý</div>
+  <h2>Phiên = một lần ở liên tục trong một phòng</h2>
+  <div class="flow">
+    <div class="step"><div class="n">3.397</div><h3>Sự kiện thô</h3><p>Log xáo trộn, có lỗi</p></div>
+    <div class="arrow">›</div>
+    <div class="step"><div class="n">3.339</div><h3>Làm sạch</h3><p>Ép kiểu, bỏ trùng &amp; hỏng, điền median theo loại cảm biến, chuẩn hoá tên</p></div>
+    <div class="arrow">›</div>
+    <div class="step"><div class="n">501</div><h3>Gom phiên</h3><p>Mở phiên mới khi <strong>lặng &gt; 30 phút</strong> hoặc <strong>đổi phòng</strong></p></div>
+    <div class="arrow">›</div>
+    <div class="step"><div class="n">1 dòng</div><h3>Đặc trưng</h3><p>Giờ bắt đầu, thời lượng, phòng, cảm biến, ngày</p></div>
+  </div>
+  <div class="row" style="margin-top:40px">
+    <div class="col card">
+      <h3>Vì sao tách theo khoảng lặng?</h3>
+      <p class="small">Cửa sổ cố định (mỗi giờ) cắt đôi bữa trưa 11:45–12:30. Khoảng lặng là ranh giới tự nhiên giữa hai hoạt động.</p>
+    </div>
+    <div class="col card">
+      <h3>Vì sao tách khi đổi phòng?</h3>
+      <p class="small">Thói quen gắn với địa điểm. Dữ liệu Aruba ghi mỗi phút nên <strong>không bao giờ có khoảng lặng</strong>: bỏ quy tắc này thì 112 ngày thành 1 phiên.</p>
+    </div>
+    <div class="col card habit">
+      <h3>Dữ liệu thật Aruba</h3>
+      <p class="small">161.280 phút → 15.176 phiên → giữ <strong>3.015</strong> phiên ≥ 5 phút (bỏ các lần đi ngang hành lang).</p>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Bước 1. Từ 3.397 sự kiện, em làm sạch còn 3.339, rồi gom thành 501 phiên. Một phiên là một lần người đó ở liên tục trong một phòng: mở phiên mới khi im lặng quá 30 phút hoặc khi đổi phòng. Quy tắc đổi phòng đặc biệt quan trọng với dữ liệu Aruba vì dữ liệu theo từng phút, không bao giờ có khoảng lặng.</aside>
+</section>
+
+<!-- 7 ─────────────────────────────── HABIT DEFINITION -->
+<section class="slide">
+  <div class="kicker">Bước 2 · Định nghĩa mẫu</div>
+  <h2>Thế nào là một thói quen?</h2>
+  <p style="margin-top:-12px;margin-bottom:26px">Một nhóm phiên của <strong>cùng một người</strong>, ở <strong>cùng một phòng</strong>, thoả cả ba điều kiện:</p>
+  <div class="row">
+    <div class="col card habit">
+      <span class="badge">1</span>
+      <h3 style="margin-top:14px">Cùng khung giờ</h3>
+      <p class="small">Giờ bắt đầu lệch nhau khoảng ≤ <strong>30 phút</strong> trên đồng hồ 24 giờ</p>
+      <p class="small" style="margin-top:10px"><span class="chip outline">eps = 0,5 giờ</span></p>
+    </div>
+    <div class="col card habit">
+      <span class="badge">2</span>
+      <h3 style="margin-top:14px">Cùng kiểu</h3>
+      <p class="small">Thời lượng tương tự (3 phút uống thuốc ≠ 30 phút ăn tối)</p>
+      <p class="small" style="margin-top:10px"><span class="chip outline">thời lượng ×2 ≈ lệch 30'</span></p>
+    </div>
+    <div class="col card habit">
+      <span class="badge">3</span>
+      <h3 style="margin-top:14px">Lặp lại đủ nhiều</h3>
+      <p class="small">Xuất hiện ở ít nhất <strong>50% số ngày</strong> quan sát</p>
+      <p class="small" style="margin-top:10px"><span class="chip outline">min_support = 50%</span></p>
+    </div>
+  </div>
+  <div class="row" style="margin-top:24px;gap:24px">
+    <div class="col row center" style="gap:12px"><span class="badge occ">~</span><p class="small">Đạt 1 + 2 nhưng &lt; 50% ngày → <strong>mẫu không thường xuyên</strong> (thể dục, lịch cuối tuần)</p></div>
+    <div class="col row center" style="gap:12px"><span class="badge grey">−1</span><p class="small">Không thuộc nhóm nào → <strong>nhiễu</strong> (đi ngang ngẫu nhiên, hành vi lệch lịch)</p></div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Đây là quyết định quan trọng nhất của bước 2: thói quen là gì. Em định nghĩa: cùng người, cùng phòng, cùng khung giờ trong khoảng 30 phút, thời lượng tương tự, và lặp lại ít nhất một nửa số ngày. Điều kiện 1 và 2 là điều kiện mật độ — nhiều phiên nằm sát nhau — nên em chọn thuật toán phân cụm theo mật độ. Điều kiện 3 kiểm tra sau bằng cách đếm số ngày.</aside>
+</section>
+
+<!-- 8 ─────────────────────────────── METHOD -->
+<section class="slide">
+  <div class="kicker">Bước 2 · Kỹ thuật</div>
+  <h2>DBSCAN trong không gian đo bằng giờ</h2>
+  <div class="row grow">
+    <div class="col">
+      <div class="row" style="gap:12px">
+        <div class="card col" style="padding:14px 16px"><h3 style="font-size:17px">① Giờ bắt đầu</h3><p style="font-size:15px;line-height:1.4">đặt lên <strong>đồng hồ tròn 24h</strong>: 23:50 và 00:10 chỉ cách 20 phút</p></div>
+        <div class="card col" style="padding:14px 16px"><h3 style="font-size:17px">② Thời lượng</h3><p style="font-size:15px;line-height:1.4">lấy <strong>log</strong>: 3' và 6' khác nhiều, 300' và 306' thì không</p></div>
+        <div class="card col habit" style="padding:14px 16px"><h3 style="font-size:17px">③ Khoảng cách</h3><p style="font-size:15px;line-height:1.4">≈ <strong>số giờ lệch nhau</strong> → eps 0,5 = 30 phút</p></div>
+      </div>
+      <p class="muted" style="font-size:13px;margin-top:8px">Công thức: x = (R·cosθ, R·sinθ, 0,5·log₂(1+thời lượng)); θ = 2π·giờ/24; R = 24/2π</p>
+      <ul style="margin-top:16px" class="small">
+        <li><strong>DBSCAN:</strong> phiên có ≥ <code>min_samples</code> phiên khác trong vòng <code>eps</code> là tâm cụm; phiên lẻ loi là nhiễu (−1).</li>
+        <li><strong>Chạy riêng từng người × từng phòng:</strong> thói quen là cá nhân và gắn với địa điểm.</li>
+        <li><strong>min_samples = max(5, ⌈0,2 × số ngày⌉):</strong> "dày" nghĩa là có phiên từ ≥ 20% số ngày (28 ngày → 6; 112 ngày → 23).</li>
+      </ul>
+    </div>
+    <div class="col" style="flex:0.85">
+      <table>
+        <tr><th>Tiêu chí</th><th>K-Means</th><th>DBSCAN</th></tr>
+        <tr><td>Biết trước số thói quen</td><td>Bắt buộc</td><td><strong>Không cần</strong></td></tr>
+        <tr><td>Hành vi ngẫu nhiên</td><td>Ép vào cụm</td><td><strong>Nhãn −1</strong></td></tr>
+        <tr><td>Ý nghĩa tham số</td><td><em>k</em> khó đoán</td><td><strong>phút · số ngày</strong></td></tr>
+        <tr><td>Hình dạng cụm</td><td>Cầu lồi</td><td><strong>Tuỳ ý</strong></td></tr>
+      </table>
+      <figure style="margin-top:14px"><img src="results/strands_aruba/figures/k_distance.png" alt="Biểu đồ k-distance" style="width:100%"><figcaption>k-distance trên Aruba: eps = 0,5 giờ nằm trước điểm gãy</figcaption></figure>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Mỗi phiên thành một điểm 3 chiều: giờ bắt đầu đặt trên vòng tròn có chu vi 24, và log của thời lượng. Nhờ chọn bán kính này, khoảng cách giữa hai điểm chính là số giờ chênh lệch, nên eps bằng 0,5 nghĩa đúng là "lệch nhau 30 phút". DBSCAN chạy riêng cho từng người và từng phòng. So với K-Means, DBSCAN không cần biết trước số thói quen và tự đánh dấu nhiễu. Biểu đồ k-distance cho thấy 0,5 giờ nằm trước điểm gãy.</aside>
+</section>
+
+<!-- 9 ─────────────────────────────── RESULT DEMO -->
+<section class="slide">
+  <div class="kicker">Kết quả · Thí nghiệm 1</div>
+  <h2 style="margin-bottom:16px">Tìm lại đủ 12/12 thói quen cài sẵn</h2>
+  <div class="row grow">
+    <figure style="flex:none;width:640px"><img src="results/demo/figures/habit_timeline.png" alt="Timeline thói quen dữ liệu mô phỏng" style="height:540px"></figure>
+    <div class="col" style="display:flex;flex-direction:column;gap:18px;justify-content:center">
+      <div><div class="stat">12/12</div><div class="stat-label">thói quen, giờ lệch &lt; 5 phút so với cài đặt</div></div>
+      <div><div class="stat">0,96</div><div class="stat-label">ARI so với nhãn thật · độ thuần 100%</div></div>
+      <div><div class="stat">164/164</div><div class="stat-label">lần đi ngang ngẫu nhiên bị đánh dấu nhiễu</div></div>
+      <div><div class="stat occ">3</div><div class="stat-label">mẫu thỉnh thoảng (thể dục 36%, dậy &amp; ăn sáng muộn cuối tuần) không bị nhận nhầm là thói quen</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Kết quả trên dữ liệu mô phỏng. Mỗi hàng là một người ở một phòng, mỗi chấm là một phiên theo giờ bắt đầu. Màu xanh là thói quen, cam là mẫu thỉnh thoảng, xám là nhiễu. Phương pháp tìm lại đủ 12 trên 12 thói quen, giờ lệch dưới 5 phút, khớp nhãn 100%. Toàn bộ 164 lần đi ngang ngẫu nhiên thành nhiễu, và tập thể dục hay lịch cuối tuần được tìm thấy nhưng không bị báo nhầm là thói quen hằng ngày.</aside>
+</section>
+
+<!-- 10 ─────────────────────────────── MEDICINE -->
+<section class="slide dark" style="justify-content:center">
+  <div class="kicker">Đúng ví dụ của đề bài · trên dữ liệu mô phỏng</div>
+  <h2 style="font-size:40px">Thói quen uống thuốc được tìm ra mà không cần ai gán nhãn</h2>
+  <p class="small" style="margin-top:-14px;margin-bottom:6px">Thói quen này do em cài sẵn trong dữ liệu mô phỏng để có đáp án kiểm tra; dữ liệu thật Aruba không có hoạt động uống thuốc.</p>
+  <div class="row" style="margin-top:20px;gap:22px">
+    <div class="card col"><div class="stat">20:32</div><div class="stat-label">giờ điển hình · 80% số lần trong 20:20–20:40</div></div>
+    <div class="card col"><div class="stat">25/28</div><div class="stat-label">ngày (89%) — khớp xác suất 85% đã cài</div></div>
+    <div class="card col"><div class="stat">3'</div><div class="stat-label">thời lượng trung vị</div></div>
+    <div class="card col"><div class="stat" style="font-size:40px;line-height:58px">pillbox</div><div class="stat-label">cảm biến đặc trưng của cụm</div></div>
+  </div>
+  <p style="margin-top:34px;max-width:1050px">Cùng ở bếp với bữa tối lúc 18:33, nhưng hai mẫu vẫn tách riêng nhờ <strong>khác giờ</strong> và <strong>khác thời lượng</strong>. Việc nhắc nhở khi người đó quên thuốc là ứng dụng xây trên kết quả này — nằm ngoài phạm vi đề tài.</p>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Đây là ví dụ đúng như đề bài đặt ra. Thuật toán tìm ra một cụm ở bếp lúc 20:32, 25 trên 28 ngày, mỗi lần 3 phút, luôn có cảm biến hộp thuốc: đó là thói quen uống thuốc buổi tối. Nó nằm cùng phòng với bữa tối nhưng vẫn tách riêng vì khác giờ và khác thời lượng. Nhắc nhở khi quên thuốc là bước ứng dụng sau này.</aside>
+</section>
+
+<!-- 11 ─────────────────────────────── RESULT ARUBA -->
+<section class="slide">
+  <div class="kicker">Kết quả · Thí nghiệm 2 · dữ liệu thật</div>
+  <h2 style="margin-bottom:16px">Aruba: 5 thói quen trong 112 ngày</h2>
+  <div class="row grow">
+    <figure style="flex:none;width:700px"><img src="results/strands_aruba/figures/habit_timeline.png" alt="Timeline thói quen Aruba" style="height:530px"></figure>
+    <div class="col">
+      <table class="small" style="font-size:15px">
+        <tr><th>Thói quen</th><th class="num">Giờ</th><th class="num">Ngày</th><th class="num">Khớp nhãn</th></tr>
+        <tr><td>Đi ngủ · phòng ngủ</td><td class="num"><span class="chip">00:18</span></td><td class="num">65%</td><td class="num">Sleeping 100%</td></tr>
+        <tr><td>Nấu bữa sáng · bếp</td><td class="num"><span class="chip">09:04</span></td><td class="num">54%</td><td class="num">Meal_Prep 92%</td></tr>
+        <tr><td>Phòng khách buổi sáng</td><td class="num"><span class="chip">09:35</span></td><td class="num">96%</td><td class="num">Relax 63%</td></tr>
+        <tr><td>Phòng tắm buổi sáng</td><td class="num"><span class="chip">10:22</span></td><td class="num">52%</td><td class="num">None 96%</td></tr>
+        <tr><td>Phòng khách chiều–tối</td><td class="num"><span class="chip">18:31</span></td><td class="num">100%</td><td class="num">Relax 79%</td></tr>
+      </table>
+      <p class="small" style="margin-top:16px">Mẫu thỉnh thoảng: ra ngoài ~11:34 trong 2,5 giờ (46% ngày), chuẩn bị bữa tối ~17:50 (30%).</p>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Trên dữ liệu thật, thuật toán chỉ thấy phòng và giờ, không thấy nhãn. Nó tìm ra 5 thói quen: đi ngủ quanh 00:18 khớp nhãn Sleeping 100%, nấu bữa sáng 09:04 khớp 92%, và các khoảng ở phòng khách, phòng tắm. Ngoài ra có các mẫu thỉnh thoảng như ra ngoài khoảng 11:34 trong gần 2 tiếng rưỡi.</aside>
+</section>
+
+<!-- 12 ─────────────────────────────── ARUBA DISCUSSION -->
+<section class="slide">
+  <div class="kicker">Kết quả · Thí nghiệm 2</div>
+  <h2>Đối chiếu với nhãn của chuyên gia</h2>
+  <figure><img src="results/strands_aruba/figures/label_matrix.png" alt="Ma trận đối chiếu thói quen và nhãn" style="width:900px"></figure>
+  <div class="row" style="margin-top:22px">
+    <div class="col card habit"><h3>Khớp tốt</h3><p class="small">Thói quen có giờ rõ ràng: ngủ 100%, nấu ăn 92%. Tổng độ thuần 79%.</p></div>
+    <div class="col card habit"><h3>Tìm ra điều chưa được gán nhãn</h3><p class="small">Phòng tắm ~10:22, 52% số ngày, 96% mang nhãn <code>None</code> — thói quen buổi sáng mà người gán nhãn không đặt tên.</p></div>
+    <div class="col card occ"><h3>Giới hạn</h3><p class="small">Phòng khách được dùng gần như suốt chiều tối → cụm kéo dài 14:19–22:20 (hiệu ứng nối cụm).</p></div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Ma trận này chỉ dùng để đánh giá: mỗi hàng là một thói quen tìm được, mỗi cột là nhãn thật. Các thói quen có giờ giấc rõ khớp rất tốt. Điều thú vị là cụm phòng tắm lúc 10:22 gần như toàn nhãn None — người gán nhãn không đặt tên, nhưng hành vi lặp lại rõ ràng; đó là giá trị của học không giám sát. Hạn chế là phòng khách bị nối thành một cụm dài vì người này ngồi đó gần như cả chiều tối.</aside>
+</section>
+
+<!-- 13 ─────────────────────────────── BASELINE -->
+<section class="slide">
+  <div class="kicker">Đánh giá</div>
+  <h2>So với cách làm ban đầu (baseline)</h2>
+  <p class="small" style="margin-top:-14px;margin-bottom:22px">Baseline: DBSCAN trên toàn bộ 10 đặc trưng đã chuẩn hoá, <code>eps</code> = P90 k-distance, không chia theo phòng.</p>
+  <div class="row" style="margin:auto 0">
+    <div class="col">
+      <h3>Độ lệch giờ trong cụm (phút) — càng nhỏ càng trả lời được "lúc mấy giờ"</h3>
+      <div class="bars" style="margin-top:18px">
+        <div class="bar-row"><div class="lab">Mô phỏng · baseline</div><div class="bar-track"><div class="bar base" style="width:63%"></div></div><div class="val">182</div></div>
+        <div class="bar-row"><div class="lab">Mô phỏng · đề xuất</div><div class="bar-track"><div class="bar prop" style="width:3.4%"></div></div><div class="val">10</div></div>
+        <div class="bar-row" style="margin-top:10px"><div class="lab">Aruba · baseline</div><div class="bar-track"><div class="bar base" style="width:100%"></div></div><div class="val">289</div></div>
+        <div class="bar-row"><div class="lab">Aruba · đề xuất</div><div class="bar-track"><div class="bar prop" style="width:39.8%"></div></div><div class="val">115</div></div>
+      </div>
+      <table style="margin-top:34px">
+        <tr><th></th><th class="num">ARI mô phỏng</th><th class="num">ARI Aruba</th><th class="num">Độ thuần Aruba</th></tr>
+        <tr><td>Baseline</td><td class="num">0,55</td><td class="num">0,03</td><td class="num">0,45</td></tr>
+        <tr class="hl"><td>Đề xuất</td><td class="num">0,96</td><td class="num">0,36</td><td class="num">0,79</td></tr>
+      </table>
+    </div>
+    <div class="col" style="flex:0.8">
+      <div class="card">
+        <h3>Vì sao baseline thất bại</h3>
+        <ul class="small">
+          <li>Giờ chỉ là 2/10 chiều → bị các đặc trưng gần giống nhau lấn át</li>
+          <li>Gộp bữa sáng của <strong>hai người</strong> với bữa trưa vào một cụm</li>
+          <li>Gom <strong>164 lần đi ngang ngẫu nhiên</strong> thành một "thói quen" giả</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3>Ablation</h3>
+        <p class="small">Bỏ quy tắc tách phiên khi đổi phòng: mô phỏng mất 1 thói quen (ngủ dậy + ăn sáng bị gộp); Aruba <strong>không còn cụm nào</strong> (cả 112 ngày thành 1 phiên).</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Em so sánh với cách làm ban đầu của chính đề tài: DBSCAN trên tất cả đặc trưng đã chuẩn hoá. Độ lệch giờ trong cụm của baseline là 3 đến 5 tiếng, tức là cụm không trả lời được câu hỏi lúc mấy giờ; phương pháp đề xuất giảm xuống 10 phút trên mô phỏng và 115 phút trên dữ liệu thật. ARI tăng từ 0,55 lên 0,96 và từ 0,03 lên 0,36. Baseline còn biến nhiễu thành một thói quen giả. Thí nghiệm bỏ quy tắc đổi phòng cho thấy quy tắc này là bắt buộc.</aside>
+</section>
+
+<!-- 14 ─────────────────────────────── SENSITIVITY -->
+<section class="slide">
+  <div class="kicker">Đánh giá</div>
+  <h2>Độ nhạy tham số trên dữ liệu thật</h2>
+  <div class="row" style="margin:auto 0">
+    <div class="col" style="flex:1.15">
+      <table>
+        <tr><th class="num">eps (giờ)</th><th class="num">Tỷ lệ ngày</th><th class="num">Thói quen</th><th class="num">Nhiễu</th><th class="num">Lệch giờ</th><th class="num">Độ thuần</th></tr>
+        <tr><td class="num">0,25</td><td class="num">0,2</td><td class="num">0</td><td class="num">94%</td><td class="num">10'</td><td class="num">0,77</td></tr>
+        <tr><td class="num">0,5</td><td class="num">0,1</td><td class="num">6</td><td class="num">18%</td><td class="num">205'</td><td class="num">0,81</td></tr>
+        <tr class="hl"><td class="num">0,5</td><td class="num">0,2</td><td class="num">5</td><td class="num">34%</td><td class="num">115'</td><td class="num">0,79</td></tr>
+        <tr><td class="num">0,5</td><td class="num">0,3</td><td class="num">4</td><td class="num">50%</td><td class="num">77'</td><td class="num">0,77</td></tr>
+        <tr><td class="num">0,75</td><td class="num">0,2</td><td class="num">7</td><td class="num">17%</td><td class="num">207'</td><td class="num">0,80</td></tr>
+        <tr><td class="num">1,0</td><td class="num">0,2</td><td class="num">7</td><td class="num">11%</td><td class="num">220'</td><td class="num">0,80</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <div class="card"><h3>eps quá nhỏ (15')</h3><p class="small">Người thật dao động hơn 15 phút → gần như tất cả thành nhiễu.</p></div>
+      <div class="card" style="margin-top:16px"><h3>eps quá lớn (≥ 45')</h3><p class="small">Ít nhiễu hơn nhưng cụm bị nối dài &gt; 3 giờ, mất khả năng chỉ ra giờ cụ thể.</p></div>
+      <div class="card habit" style="margin-top:16px"><h3>Điểm cân bằng</h3><p class="small">30 phút, 20% số ngày — chọn trước theo ý nghĩa, <strong>không tinh chỉnh theo nhãn</strong>. Độ thuần ổn định 0,77–0,81 mọi cấu hình. Trên mô phỏng, cả 12 cấu hình đều ra đúng 12 thói quen.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Em kiểm tra độ nhạy của hai tham số. eps quá nhỏ thì gần như mọi phiên thành nhiễu; quá lớn thì cụm bị nối dài, mất giờ cụ thể. 30 phút và 20% số ngày là điểm cân bằng. Em nhấn mạnh tham số được chọn theo ý nghĩa chứ không tinh chỉnh theo nhãn, vì tinh chỉnh theo nhãn sẽ biến bài toán thành có giám sát. Độ thuần gần như không đổi, nghĩa là cụm luôn có ý nghĩa; tham số chỉ quyết định khung giờ chặt hay rộng.</aside>
+</section>
+
+<!-- 15 ─────────────────────────────── LIMITATIONS -->
+<section class="slide">
+  <div class="kicker">Nhìn lại</div>
+  <h2>Hạn chế và hướng phát triển</h2>
+  <div class="row" style="margin:auto 0">
+    <div class="col card occ">
+      <h3>Hạn chế</h3>
+      <ul>
+        <li><strong>Một eps cho mọi phòng:</strong> thói quen đúng giờ và thói quen kéo dài có mật độ khác nhau → nối cụm ở phòng khách</li>
+        <li><strong>Chỉ vị trí + thời gian:</strong> ăn và xem TV cùng phòng, cùng giờ không phân biệt được nếu thiếu cảm biến thiết bị</li>
+        <li><strong>Chưa khai thác chu kỳ tuần:</strong> dữ liệu Aruba không có ngày tháng thật</li>
+        <li><strong>Giả định biết người gây ra sự kiện</strong>; dữ liệu thật mới có một hộ</li>
+      </ul>
+    </div>
+    <div class="col card habit">
+      <h3>Hướng phát triển</h3>
+      <ul>
+        <li><strong>HDBSCAN</strong> để tự thích nghi mật độ theo từng phòng</li>
+        <li>Thêm trục ngày trong tuần khi dữ liệu có ngày tháng thật</li>
+        <li>Theo dõi thói quen theo tháng để phát hiện thay đổi hành vi</li>
+        <li>Nền tảng cho ứng dụng: nhắc uống thuốc, cảnh báo bất thường ở người cao tuổi</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Học thói quen trong nhà thông minh</span></div>
+  <aside class="notes">Hạn chế chính: một bán kính eps chung cho mọi phòng nên thói quen kéo dài như ngồi phòng khách bị nối cụm; phiên chỉ mô tả vị trí và thời gian; chưa khai thác chu kỳ tuần; và dữ liệu thật mới có một hộ. Hướng phát triển là thử HDBSCAN, thêm chu kỳ tuần, và theo dõi thói quen theo thời gian — làm nền cho các ứng dụng như nhắc uống thuốc.</aside>
+</section>
+
+<!-- 16 ─────────────────────────────── CONCLUSION -->
+<section class="slide dark" style="justify-content:center">
+  <div class="kicker">Kết luận</div>
+  <h2 style="font-size:40px">Từ log cảm biến không nhãn đến "ai · ở đâu · mấy giờ · bao nhiêu ngày"</h2>
+  <div class="row" style="margin-top:14px;gap:22px">
+    <div class="card col"><h3>B1</h3><p class="small">Phiên = một lần ở liên tục trong một phòng — hoạt động cho cả log sự kiện lẫn dữ liệu vị trí theo phút.</p></div>
+    <div class="card col"><h3>B2</h3><p class="small">DBSCAN trong không gian "giờ", theo người × phòng; tham số đọc được bằng lời.</p></div>
+    <div class="card col"><h3>Kết quả</h3><p class="small">12/12 thói quen (có uống thuốc 20:32) trên mô phỏng; ngủ &amp; bữa sáng khớp 92–100% trên dữ liệu thật.</p></div>
+  </div>
+  <p class="small" style="margin-top:30px">Tái lập: <code style="color:#fff">smart-home generate-demo &amp;&amp; smart-home run</code> · <code style="color:#fff">smart-home download-strands &amp;&amp; smart-home run --config configs/strands_aruba.yaml</code></p>
+  <p style="font-size:30px;margin-top:40px;color:#fff;font-weight:700">Em xin cảm ơn — rất mong nhận được câu hỏi của thầy cô.</p>
+  <aside class="notes">Tóm lại, em đã biến dữ liệu cảm biến không nhãn thành các thói quen có thể đọc được: ai, ở đâu, mấy giờ, bao nhiêu ngày. Phương pháp đơn giản, giải thích được, và được kiểm chứng trên cả dữ liệu có đáp án lẫn dữ liệu thật. Toàn bộ kết quả tái lập được bằng hai lệnh. Em xin cảm ơn và mong nhận câu hỏi.</aside>
+</section>
+
+</div></div>
+
+<div id="notes"></div>
+<div id="hint"><span id="counter"></span><button id="toggle-notes" type="button">Ghi chú (N)</button><button id="toggle-full" type="button">Toàn màn hình (F)</button></div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var deck = document.getElementById("deck");
+  var notes = document.getElementById("notes");
+  var counter = document.getElementById("counter");
+  var index = 0;
+
+  function readHash() {
+    var n = parseInt((location.hash || "").replace("#", ""), 10);
+    return isNaN(n) ? 0 : Math.min(Math.max(n - 1, 0), slides.length - 1);
+  }
+  function fit() {
+    var reserve = notes.classList.contains("show") ? notes.offsetHeight : 0;
+    var scale = Math.min(window.innerWidth / 1280, (window.innerHeight - reserve) / 720);
+    deck.style.transform = "scale(" + scale + ")";
+    document.getElementById("stage").style.bottom = reserve + "px";
+  }
+  function show(i) {
+    index = Math.min(Math.max(i, 0), slides.length - 1);
+    slides.forEach(function (s, k) { s.classList.toggle("active", k === index); });
+    var aside = slides[index].querySelector("aside.notes");
+    notes.innerHTML = "<b>Ghi chú slide " + (index + 1) + ":</b> " + (aside ? aside.innerHTML : "");
+    counter.textContent = (index + 1) + " / " + slides.length;
+    if (location.hash !== "#" + (index + 1)) history.replaceState(null, "", "#" + (index + 1));
+    fit();
+  }
+  function toggleNotes() { notes.classList.toggle("show"); fit(); }
+  function toggleFull() {
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+    else { document.exitFullscreen && document.exitFullscreen(); }
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " ", "Enter"].indexOf(e.key) >= 0) { e.preventDefault(); show(index + 1); }
+    else if (["ArrowLeft", "PageUp", "Backspace"].indexOf(e.key) >= 0) { e.preventDefault(); show(index - 1); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+    else if (e.key === "n" || e.key === "N") toggleNotes();
+    else if (e.key === "f" || e.key === "F") toggleFull();
+  });
+  document.getElementById("stage").addEventListener("click", function (e) {
+    show(e.clientX > window.innerWidth / 2 ? index + 1 : index - 1);
+  });
+  document.getElementById("toggle-notes").addEventListener("click", toggleNotes);
+  document.getElementById("toggle-full").addEventListener("click", toggleFull);
+  window.addEventListener("resize", fit);
+  window.addEventListener("hashchange", function () { show(readHash()); });
+  show(readHash());
+})();
+</script>
+</body>
+</html>

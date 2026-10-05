@@ -2,9 +2,23 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run smart-home pipeline",
+      "label": "Run demo experiment",
       "type": "shell",
       "command": "python -m smart_home_patterns.cli generate-demo; python -m smart_home_patterns.cli run",
+      "options": {"env": {"PYTHONPATH": "${workspaceFolder}/src"}},
+      "problemMatcher": []
+    },
+    {
+      "label": "Run STRANDS Aruba experiment",
+      "type": "shell",
+      "command": "python -m smart_home_patterns.cli download-strands; python -m smart_home_patterns.cli run --config configs/strands_aruba.yaml",
+      "options": {"env": {"PYTHONPATH": "${workspaceFolder}/src"}},
+      "problemMatcher": []
+    },
+    {
+      "label": "Run experiments (baseline + sensitivity)",
+      "type": "shell",
+      "command": "python -m smart_home_patterns.cli experiments",
       "options": {"env": {"PYTHONPATH": "${workspaceFolder}/src"}},
       "problemMatcher": []
     },

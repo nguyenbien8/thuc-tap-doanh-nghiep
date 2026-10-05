@@ -1,0 +1,4 @@
+method,n_clusters,noise_ratio,time_spread_min,ari,nmi,purity,n_habits
+Baseline: DBSCAN trên toàn bộ đặc trưng,9,0.08059701492537313,288.96151437823784,0.03198516152108299,0.11644704884939487,0.4491341991341991,
+Đề xuất: DBSCAN theo cư dân × phòng,11,0.34328358208955223,114.65686798763578,0.3606197018172736,0.446638960933376,0.7924242424242425,5
+Ablation: không tách phiên khi đổi phòng,0,1.0,,,,,0

@@ -1,0 +1,35 @@
+# Experiment 2 – real data: STRANDS long-term person activity dataset, Aruba
+# smart apartment (CASAS), 16 weeks, room of the person every minute.
+# Run:  smart-home download-strands  &&  smart-home run --config configs/strands_aruba.yaml
+name: strands_aruba
+title: STRANDS Aruba (dữ liệu thật, 112 ngày)
+
+data:
+  source: strands
+  strands:
+    folder: data/raw/strands/aruba
+    resident_id: aruba
+    start_date: "2010-11-04"               # nominal: the files contain no calendar dates
+    location_base: 1                       # location codes are 1-based (see reports/02_du_lieu.md)
+    activity_base: 0
+    # Code 9 is named "Second Bathroom" by the names file, but stays there last
+    # 2.5 h with no activity and Leave_Home/Enter_Home happen there -> outside.
+    location_overrides: {9: outside}
+
+preprocessing:
+  required_columns: [timestamp, resident_id, room, sensor_type, sensor_id, value, event_type]
+  max_missing_fraction: 0.40
+  inactivity_gap_minutes: 30
+  split_on_room_change: true               # one session = one continuous stay in one room
+  min_session_minutes: 5                   # ignore walking through a room (< 5 minutes)
+
+discovery:
+  eps_hours: 0.5
+  min_samples: 5
+  min_samples_day_ratio: 0.2               # 112 days -> min_samples = 23
+  duration_weight: 0.5
+  min_support: 0.5
+
+output:
+  processed_dir: data/processed/strands_aruba
+  results_dir: reports/results/strands_aruba

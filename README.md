@@ -1,113 +1,134 @@
-# Smart Home Activity Pattern Discovery
+# Học thói quen của con người trong ngôi nhà thông minh
 
-Dự án thực tập phát hiện các hoạt động thường xuyên/tuần hoàn của con người trong ngôi nhà thông minh từ dữ liệu cảm biến, theo hướng **unsupervised learning**.
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Tests](https://img.shields.io/badge/tests-21%20passed-success)
+![Method](https://img.shields.io/badge/method-DBSCAN-orange)
 
-## 1. Mục tiêu và phạm vi
+| | |
+|---|---|
+| **Đề tài** | Học thói quen của con người trong ngôi nhà thông minh từ dữ liệu cảm biến |
+| **Sinh viên thực hiện** | Nguyễn Văn Biển |
+| **Giảng viên hướng dẫn** | Vũ Thị Hồng Nhạn |
+| **Đơn vị** | UET-VNU |
+| **Slide** | [reports/slide_thuyet_trinh.html](reports/slide_thuyet_trinh.html) (tải repo về rồi mở bằng trình duyệt) |
+| **Mới đọc repo?** | Bắt đầu từ [docs/README.md](docs/README.md) |
 
-Bài toán được giới hạn ở hai bước có thể giải thích và thực nghiệm rõ ràng:
+Đề tài **tự động tìm các hành động thường xuyên, tuần hoàn của con người từ dữ liệu cảm biến trong nhà thông minh**, không dùng nhãn. Kết quả là các thói quen có thể đọc được, ví dụ:
 
-1. **Tiền xử lý dữ liệu:** kiểm tra schema, chuẩn hóa kiểu dữ liệu, xử lý giá trị thiếu, loại bản ghi trùng, sắp xếp theo thời gian, gom các sự kiện thành session theo khoảng không hoạt động và tạo đặc trưng.
-2. **Tìm mẫu hoạt động:** xem mỗi session là một quan sát; dùng DBSCAN để gom các session có hành vi tương tự mà không cần nhãn hoạt động ban đầu.
+> *resident_01 · bếp · **20:32** (80% số lần trong 20:20–20:40) · ~3 phút · **25/28 ngày** · cảm biến hộp thuốc* → thói quen uống thuốc buổi tối.
+>
+> Ví dụ này lấy từ **dữ liệu mô phỏng**, nơi thói quen uống thuốc được cài sẵn làm đáp án. Trên dữ liệu thật Aruba, phương pháp tìm ra giấc ngủ (~00:18) và bữa sáng (~09:04).
 
-Một cụm DBSCAN được diễn giải là một mẫu hoạt động lặp lại, dựa trên thời lượng, số sự kiện, loại cảm biến, phòng, thời điểm trong ngày và ngày trong tuần. Nhãn `-1` là nhiễu hoặc hành vi bất thường.
+**Mục lục:** [Kết quả chính](#kết-quả-chính) · [Cài đặt](#cài-đặt) · [Chạy lại thực nghiệm](#chạy-lại-toàn-bộ-thực-nghiệm) · [Dùng dữ liệu của bạn](#dùng-dữ-liệu-của-bạn) · [Tài liệu](#tài-liệu) · [Cấu trúc mã nguồn](#cấu-trúc-mã-nguồn) · [Tài liệu tham khảo](#tài-liệu-tham-khảo)
 
-**Phạm vi chính thức:** project chỉ thực nghiệm việc tìm các mẫu hành động chung từ dữ liệu cảm biến. Project không xây dựng robot, hệ thống nhắc nhở, bộ điều khiển thiết bị hay mô-đun dự báo hành động tiếp theo. Các ứng dụng như “phát hiện người thường uống thuốc lúc 8h để đề xuất nhắc nhở khi bỏ lỡ” chỉ là hướng phát triển sau này.
+Đề tài gồm đúng hai bước:
 
-## 2. Dữ liệu đầu vào
+1. **Tiền xử lý:** làm sạch log cảm biến, gom sự kiện thành **phiên** (một lần ở liên tục trong một phòng), trích đặc trưng.
+2. **Định nghĩa và tìm mẫu:** *thói quen* = các phiên của cùng người, cùng phòng, bắt đầu trong khoảng ~30 phút, thời lượng tương tự, lặp lại ở ≥ 50% số ngày. Kỹ thuật duy nhất: **DBSCAN** trong không gian có đơn vị *giờ*.
 
-CSV cần có các cột:
+Robot, hệ thống nhắc nhở hay dự đoán hành động nằm **ngoài phạm vi**.
 
-`timestamp, resident_id, room, sensor_type, sensor_id, value, event_type`
+## Kết quả chính
 
-Ví dụ:
+| | Dữ liệu mô phỏng (có đáp án) | STRANDS Aruba (dữ liệu thật) |
+|---|---|---|
+| Quy mô | 2 người · 28 ngày · 3.397 sự kiện | 1 người · 112 ngày · 161.280 phút |
+| Thói quen tìm được | **12/12** thói quen cài sẵn, kể cả uống thuốc 20:32 | **5** thói quen: ngủ ~00:18, nấu bữa sáng ~09:04, ... |
+| Khớp với nhãn thật (chỉ để đánh giá) | ARI 0,96 · độ thuần 100% | độ thuần 79% (ngủ 100%, nấu ăn 92%) |
+| Độ lệch giờ trong cụm, so với baseline | 182 → **10 phút** | 289 → **115 phút** |
 
-```csv
-timestamp,resident_id,room,sensor_type,sensor_id,value,event_type
-2025-01-01 07:10:00,resident_01,kitchen,motion,kitchen_motion,1,motion
-2025-01-01 07:12:00,resident_01,kitchen,temperature,kitchen_temp,22.1,reading
-```
+![Thói quen tìm được trên dữ liệu mô phỏng](reports/results/demo/figures/habit_timeline.png)
 
-Project có dữ liệu demo được sinh tái lập, không chứa thông tin cá nhân và không phụ thuộc internet. Có thể thay file demo bằng dữ liệu STRANDS sau khi ánh xạ tên cột về schema trên.
+## Cài đặt
 
-## 3. Cài đặt
-
-Khuyến nghị Python 3.10+:
+Python 3.10+.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
-## 4. Chạy nhanh
+## Chạy lại toàn bộ thực nghiệm
 
 ```powershell
-python -m smart_home_patterns.cli generate-demo
-python -m smart_home_patterns.cli run
-```
+# Thí nghiệm 1 – dữ liệu mô phỏng
+smart-home generate-demo
+smart-home run
 
-Kết quả chính:
+# Thí nghiệm 2 – dữ liệu thật STRANDS Aruba (tải ~30 kB từ LCAS)
+smart-home download-strands
+smart-home run --config configs/strands_aruba.yaml
 
-- `data/processed/clean_events.csv`: sự kiện đã làm sạch và có `session_key`.
-- `data/processed/session_features.csv`: một dòng cho mỗi session, gồm đặc trưng dùng cho clustering và nhãn cụm.
-- `reports/metrics.json`: `eps`, số cụm, tỷ lệ nhiễu, Silhouette, Davies-Bouldin và Calinski-Harabasz.
-- `reports/activity_profiles.csv`: profile trung bình của từng mẫu hoạt động.
-- `reports/figures/activity_clusters_pca.png`: biểu đồ PCA màu theo cụm.
-- `reports/figures/k_distance_diagnostic.png`: chẩn đoán khoảng cách dùng để kiểm tra lựa chọn `eps`.
+# So sánh với baseline, ablation, phân tích độ nhạy
+smart-home experiments
 
-Có thể chạy từng bước:
-
-```powershell
-python -m smart_home_patterns.cli preprocess --input data/raw/smart_home_events.csv
-python -m smart_home_patterns.cli run --input data/raw/smart_home_events.csv
-```
-
-## 5. Phương pháp và quyết định thiết kế
-
-### Tiền xử lý
-
-- Timestamp lỗi bị loại; `value` được ép số và điền median theo loại cảm biến, sau đó dùng median toàn cục nếu cần.
-- Chuẩn hóa category bằng trim/lowercase.
-- Bản ghi trùng được loại bỏ.
-- Session mới bắt đầu khi khoảng cách giữa hai sự kiện liên tiếp của cùng cư dân vượt `inactivity_gap_minutes` (mặc định 30 phút).
-- Thời điểm trong ngày được mã hóa chu kỳ bằng `sin`/`cos`, tránh việc 23:59 và 00:01 bị xem là xa nhau.
-
-### Phát hiện mẫu
-
-DBSCAN phù hợp với bài toán vì không yêu cầu biết trước số hoạt động, tìm được vùng dữ liệu có mật độ cao và đánh dấu ngoại lệ. Trước DBSCAN, đặc trưng được chuẩn hóa để `event_count` không lấn át các biến khác. `eps` mặc định lấy phân vị 90% của khoảng cách đến láng giềng thứ `min_samples`; trong báo cáo cần ghi lại giá trị thực tế và giải thích nếu điều chỉnh thủ công.
-
-PCA chỉ dùng cho trực quan hóa hai chiều, không phải mô hình phát hiện mẫu chính.
-
-## 6. Bố cục báo cáo đề xuất
-
-1. Đặt vấn đề và câu hỏi nghiên cứu.
-2. Mô tả dữ liệu và schema.
-3. Tiền xử lý: quy tắc làm sạch, sessionization, đặc trưng.
-4. Định nghĩa mẫu: một mẫu là một nhóm session có profile cảm biến/thời gian tương tự.
-5. DBSCAN: lý do chọn, `eps`, `min_samples`, chuẩn hóa.
-6. Kết quả: số cụm, tỷ lệ nhiễu, các chỉ số, profile cụm và hình PCA.
-7. Phân tích một mẫu tiêu biểu và kiểm tra tính lặp theo ngày/tuần.
-8. Hạn chế: dữ liệu demo có cấu trúc đơn giản, session phụ thuộc ngưỡng 30 phút, DBSCAN nhạy với scale và `eps`, chưa có ground truth.
-9. Hướng phát triển: đối chiếu nhãn chuyên gia, so sánh HDBSCAN, cập nhật theo mùa bằng cách chạy lại pipeline trên cửa sổ dữ liệu mới.
-
-Phần lập luận đầy đủ, gồm câu hỏi nghiên cứu, ranh giới phạm vi, lý do chọn DBSCAN, cách đọc kết quả demo, ý tưởng ứng dụng ngoài phạm vi và câu kết luận mẫu, nằm trong [research_story.md](reports/research_story.md). Đây là tài liệu nên dùng làm khung chính khi viết báo cáo và slide bảo vệ.
-
-[Trình tự xử lý chi tiết](reports/processing_pipeline.md) mô tả từng bước từ CSV đến cluster, còn [ý tưởng thuyết trình](reports/presentation_outline.md) là kịch bản nội dung và các câu hỏi phản biện dự kiến. Hai file này là nền trước khi thiết kế slide.
-
-## 7. Bước tiếp theo để nâng chất lượng nghiên cứu
-
-Ưu tiên tiếp theo không phải thêm nhiều thuật toán mà là kiểm chứng ý nghĩa của cluster trên dữ liệu thật:
-
-1. Ánh xạ dữ liệu STRANDS về schema của project.
-2. Chọn 30-50 session và gán nhãn thủ công ở mức đơn giản.
-3. Đối chiếu nhãn thủ công với cluster để biết mô hình đang nhận ra hoạt động hay chỉ nhận ra phòng.
-4. Chạy K-Means như baseline đối chứng, giữ DBSCAN làm phương pháp chính.
-5. Chỉ diễn giải hoặc đặt tên nghiệp vụ cho cluster sau khi đã kiểm tra timeline và metrics; việc xây hệ thống hành động dựa trên cluster là phần mở rộng, không thuộc project này.
-
-## 8. Kiểm thử
-
-```powershell
+# Kiểm thử
 python -m pytest
 ```
 
-Các test hiện có kiểm tra chuẩn hóa dữ liệu, chia session và đầu ra discovery. Đây là project thực nghiệm nên cần bổ sung đánh giá thủ công trên một số session thật trước khi kết luận ý nghĩa nghiệp vụ.
+Nếu chưa cài bằng `pip install -e .`, thay `smart-home` bằng `python -m smart_home_patterns.cli` (đặt `PYTHONPATH=src`).
+
+Mỗi lần `run` ghi ra `reports/results/<tên>/`:
+
+| File | Nội dung |
+|---|---|
+| `habit_report.md` | Báo cáo đọc được: số liệu tiền xử lý, tham số, bảng thói quen |
+| `habits.csv` | Mỗi dòng một mẫu: người, phòng, giờ điển hình, khung 80%, thời lượng, số ngày, tần suất, `is_habit` |
+| `metrics.json` | Tham số và chỉ số (số cụm, tỷ lệ nhiễu, silhouette, ARI/NMI/độ thuần) |
+| `figures/habit_timeline.png` | Các phiên theo giờ trong ngày, tô màu thói quen / mẫu thỉnh thoảng / nhiễu |
+| `figures/actogram.png` | Nhật ký vị trí theo từng ngày |
+| `figures/k_distance.png` | Cơ sở chọn `eps` |
+| `figures/label_matrix.png` | Đối chiếu thói quen với nhãn thật |
+
+Dữ liệu trung gian (`clean_events.csv`, `sessions.csv`) nằm trong `data/processed/<tên>/` và không được commit.
+
+## Dùng dữ liệu của bạn
+
+Chuẩn bị CSV với các cột `timestamp, resident_id, room, sensor_type, sensor_id, value, event_type` (tuỳ chọn thêm `activity_label` để đánh giá), rồi:
+
+```powershell
+smart-home run --input path/to/events.csv
+```
+
+Tham số nằm trong [configs/config.yaml](configs/config.yaml), mỗi dòng có chú thích.
+
+## Tài liệu
+
+> **Mới tiếp cận repo?** Bắt đầu từ [docs/README.md](docs/README.md): lộ trình đọc, giải thích chi tiết dữ liệu, từng quyết định thiết kế và cách đọc code.
+
+Báo cáo nộp:
+
+| File | Nội dung |
+|---|---|
+| [reports/01_tong_quan_de_tai.md](reports/01_tong_quan_de_tai.md) | Bối cảnh, câu hỏi nghiên cứu, phạm vi, định nghĩa thói quen, liên hệ tài liệu tham khảo |
+| [reports/02_du_lieu.md](reports/02_du_lieu.md) | Schema, bộ dữ liệu mô phỏng, dữ liệu STRANDS Aruba và kiểm định mã vị trí |
+| [reports/03_phuong_phap.md](reports/03_phuong_phap.md) | Chi tiết B1 và B2: công thức, tham số, lý do thiết kế, cách đánh giá |
+| [reports/04_ket_qua_thuc_nghiem.md](reports/04_ket_qua_thuc_nghiem.md) | Kết quả, so sánh baseline, ablation, độ nhạy, hạn chế |
+| [reports/05_kich_ban_thuyet_trinh.md](reports/05_kich_ban_thuyet_trinh.md) | Kịch bản thuyết trình và câu hỏi phản biện |
+| [reports/slide_thuyet_trinh.html](reports/slide_thuyet_trinh.html) | Slide thuyết trình (mở bằng trình duyệt; `N` = ghi chú, `F` = toàn màn hình) |
+
+## Cấu trúc mã nguồn
+
+```text
+configs/                 config.yaml (mô phỏng), strands_aruba.yaml (dữ liệu thật)
+src/smart_home_patterns/
+  preprocessing.py       B1: làm sạch, gom phiên, đặc trưng
+  discovery.py           B2: không gian "giờ", DBSCAN theo người × phòng, mô tả thói quen
+  pipeline.py            chạy B1 → B2, ghi báo cáo
+  plots.py               hình cho báo cáo
+  experiments.py         baseline, ablation, độ nhạy
+  demo.py                sinh dữ liệu mô phỏng có đáp án
+  strands_adapter.py     đọc bộ dữ liệu STRANDS (location.min / activity.min)
+  cli.py                 lệnh smart-home
+tests/                   21 kiểm thử (pytest)
+reports/                 báo cáo nộp, slide, kết quả
+docs/                    tài liệu hướng dẫn hiểu repo (bắt đầu từ docs/README.md)
+```
+
+## Tài liệu tham khảo
+
+- P. Duckworth, D. C. Hogg, A. G. Cohn. *Unsupervised human activity analysis for intelligent mobile robots.* Artificial Intelligence 270:67–92, 2019. doi:10.1016/j.artint.2018.12.005
+- C. Coppola, T. Krajník, N. Bellotto, T. Duckett. *Learning temporal context for activity recognition.* ECAI 2016 — bộ dữ liệu STRANDS long-term person activity: <https://lcas.lincoln.ac.uk/nextcloud/shared/datasets/activity.html>
+- D. J. Cook. *Learning setting-generalized activity models for smart spaces.* IEEE Intelligent Systems, 2010 — dữ liệu CASAS Aruba.
+- M. Ester, H.-P. Kriegel, J. Sander, X. Xu. *A density-based algorithm for discovering clusters in large spatial databases with noise.* KDD 1996.

@@ -1,0 +1,33 @@
+{
+  "dataset": "strands_aruba",
+  "preprocessing": {
+    "raw_events": 161280,
+    "clean_events": 161280,
+    "dropped_events": 0,
+    "sessions_total": 15176,
+    "sessions_kept": 3015,
+    "sessions_dropped_short": 12161
+  },
+  "n_sessions": 3015,
+  "n_clusters": 11,
+  "n_habits": 5,
+  "noise_ratio": 0.34328358208955223,
+  "habit_session_ratio": 0.5608623548922056,
+  "silhouette_within_room": 0.6002873593940129,
+  "ari": 0.3606197018172736,
+  "nmi": 0.446638960933376,
+  "purity": 0.7924242424242425,
+  "parameters": {
+    "eps_hours": 0.5,
+    "min_samples": 5,
+    "min_samples_day_ratio": 0.2,
+    "min_samples_by_resident": {
+      "aruba": 23
+    },
+    "duration_weight": 0.5,
+    "min_support": 0.5,
+    "observed_days": {
+      "aruba": 112
+    }
+  }
+}

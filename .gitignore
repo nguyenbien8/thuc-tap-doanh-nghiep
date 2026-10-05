@@ -1,10 +1,18 @@
+# Python / tooling
 .venv/
 __pycache__/
 .pytest_cache/
 *.py[cod]
+*.egg-info/
+build/
+dist/
+node_modules/
 .DS_Store
-data/raw/*.csv
-data/processed/*.csv
-reports/figures/*.png
-reports/metrics.json
-reports/activity_profiles.csv
+
+# Data is re-created by the CLI (generate-demo / download-strands / run)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Results under reports/results/ ARE committed: the report and slides cite them.

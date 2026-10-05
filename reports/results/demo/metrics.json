@@ -1,0 +1,35 @@
+{
+  "dataset": "demo",
+  "preprocessing": {
+    "raw_events": 3397,
+    "clean_events": 3339,
+    "dropped_events": 58,
+    "sessions_total": 501,
+    "sessions_kept": 501,
+    "sessions_dropped_short": 0
+  },
+  "n_sessions": 501,
+  "n_clusters": 15,
+  "n_habits": 12,
+  "noise_ratio": 0.3532934131736527,
+  "habit_session_ratio": 0.5968063872255489,
+  "silhouette_within_room": 0.9084481006583434,
+  "ari": 0.9592277711965677,
+  "nmi": 0.9810051612901165,
+  "purity": 1.0,
+  "parameters": {
+    "eps_hours": 0.5,
+    "min_samples": 5,
+    "min_samples_day_ratio": 0.2,
+    "min_samples_by_resident": {
+      "resident_01": 6,
+      "resident_02": 6
+    },
+    "duration_weight": 0.5,
+    "min_support": 0.5,
+    "observed_days": {
+      "resident_01": 28,
+      "resident_02": 28
+    }
+  }
+}

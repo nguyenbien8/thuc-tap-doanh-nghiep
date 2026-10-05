@@ -1,0 +1,12 @@
+cluster,resident_id,room,typical_start,window_start,window_end,start_std_minutes,median_duration_minutes,sessions,days_present,days_observed,support,is_habit,sensor_types,mean_start_hour,dominant_label,label_purity
+0,aruba,kitchen,09:04,08:01,10:18,48.7,8.0,92,60,112,0.536,True,presence,9.0735,Meal_Preparation,0.924
+1,aruba,kitchen,15:35,15:07,16:06,23.7,8.0,39,30,112,0.268,False,presence,15.5902,None,0.487
+2,aruba,kitchen,17:50,17:14,18:33,29.2,7.0,55,33,112,0.295,False,presence,17.8416,Meal_Preparation,0.8
+3,aruba,living_room,09:35,07:32,11:41,91.3,11.0,418,108,112,0.964,True,presence,9.5861,Relax,0.629
+4,aruba,living_room,18:31,14:19,22:20,170.0,23.0,1011,112,112,1.0,True,presence,18.5159,Relax,0.792
+5,aruba,master_bathroom,07:39,07:01,08:17,26.6,12.0,65,35,112,0.312,False,presence,7.6529,None,0.985
+6,aruba,master_bathroom,10:22,09:25,11:11,39.8,12.5,90,58,112,0.518,True,presence,10.36,None,0.956
+7,aruba,master_bedroom,00:18,23:43,00:55,28.1,332.5,80,73,112,0.652,True,presence,0.2981,Sleeping,1.0
+8,aruba,master_bedroom,05:46,05:19,06:10,17.5,161.0,25,25,112,0.223,False,presence,5.7641,Sleeping,1.0
+9,aruba,master_bedroom,11:05,10:36,11:30,23.3,7.0,54,40,112,0.357,False,presence,11.0787,None,0.944
+10,aruba,outside,11:34,11:15,11:47,14.4,146.0,51,51,112,0.455,False,presence,11.5633,None,1.0

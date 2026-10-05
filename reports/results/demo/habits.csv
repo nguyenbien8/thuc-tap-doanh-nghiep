@@ -1,0 +1,16 @@
+cluster,resident_id,room,typical_start,window_start,window_end,start_std_minutes,median_duration_minutes,sessions,days_present,days_observed,support,is_habit,sensor_types,mean_start_hour,dominant_label,label_purity
+0,resident_01,bedroom,06:42,06:31,06:57,11.0,15.4,28,28,28,1.0,True,door|light|motion,6.7056,wake_up,1.0
+1,resident_01,bedroom,22:31,22:18,22:45,11.3,10.1,28,28,28,1.0,True,door|light|motion,22.5112,go_to_bed,1.0
+2,resident_01,kitchen,07:33,07:23,07:49,9.7,20.2,27,27,28,0.964,True,door|light|motion|temperature,7.5437,breakfast,1.0
+3,resident_01,kitchen,12:03,11:52,12:12,9.5,28.4,27,27,28,0.964,True,door|light|motion|temperature,12.0452,lunch,1.0
+4,resident_01,kitchen,18:33,18:22,18:45,8.9,30.4,27,27,28,0.964,True,door|light|motion|temperature,18.5507,dinner,1.0
+5,resident_01,kitchen,20:32,20:20,20:40,7.7,2.6,25,25,28,0.893,True,door|light|motion|pillbox|temperature,20.5261,take_medicine,1.0
+6,resident_01,living_room,14:03,13:46,14:13,12.0,57.6,21,20,28,0.714,True,light|motion|power,14.0511,watch_tv,1.0
+7,resident_01,living_room,16:55,16:37,17:07,11.5,29.0,10,10,28,0.357,False,light|motion|power,16.9212,exercise,1.0
+8,resident_02,bedroom,07:46,07:32,07:57,9.8,11.2,20,20,28,0.714,True,door|light|motion,7.7714,wake_up,1.0
+9,resident_02,bedroom,09:14,08:54,09:24,11.9,11.2,8,8,28,0.286,False,door|light|motion,9.2299,wake_up,1.0
+10,resident_02,bedroom,23:14,23:05,23:25,7.3,9.4,28,28,28,1.0,True,door|light|motion,23.2403,go_to_bed,1.0
+11,resident_02,kitchen,08:16,08:07,08:28,9.3,15.7,19,19,28,0.679,True,door|light|motion|temperature,8.2731,breakfast,1.0
+12,resident_02,kitchen,09:45,09:35,10:01,11.8,14.0,7,7,28,0.25,False,door|light|motion|temperature,9.7558,breakfast,1.0
+13,resident_02,kitchen,19:16,19:05,19:27,11.2,27.3,27,26,28,0.929,True,door|light|motion|temperature,19.2594,dinner,1.0
+14,resident_02,living_room,20:28,20:13,20:38,9.5,96.5,22,22,28,0.786,True,light|motion|power,20.4625,watch_tv,1.0
